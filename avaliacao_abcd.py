@@ -1,9 +1,13 @@
 import streamlit as st
 from databricks import sql
 from datetime import datetime
-from PIL import Image
+from dotenv import load_dotenv
+import os
 
-
+load_dotenv()
+DB_SERVER_HOSTNAME = os.getenv("DB_SERVER_HOSTNAME")
+DB_HTTP_PATH = os.getenv("DB_HTTP_PATH")
+DB_ACCESS_TOKEN = os.getenv("DB_ACCESS_TOKEN")
 
 # Aplicando CSS para aumentar a largura da página e expandir elementos
 st.markdown(
@@ -98,9 +102,9 @@ descricoes_tecnico = {
 # Função para conectar ao banco de dados
 def conectar_banco():
     return sql.connect(
-        server_hostname="dbc-d7ab2071-0203.cloud.databricks.com",
-        http_path="/sql/1.0/warehouses/afb478e9f8efe4a4",
-        access_token="dapia8406c063a4655638b46b9afed79b6d8"
+        server_hostname=DB_SERVER_HOSTNAME,
+        http_path=DB_HTTP_PATH,
+        access_token=DB_ACCESS_TOKEN
     )
 
 # Função para calcular a nota final
