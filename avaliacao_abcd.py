@@ -107,6 +107,26 @@ def conectar_banco():
         access_token=DB_ACCESS_TOKEN
     )
 
+# Função para buscar colaboradores da tabela dim_employee
+def buscar_colaboradores_departamentos_gestores():
+    connection = conectar_banco()
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT
+          t1.id_employee,
+          t1.nm_employee,
+          t1.nm_departament,
+          t2.nm_employee AS nm_gestor
+        FROM
+          datalake.silver_pny.dim_employee AS t1
+        LEFT JOIN datalake.silver_pny.dim_employee AS t2 ON t1.id_employee_supervisor = t2.id_employee
+    """)
+    colaboradores = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return {row['nm_employee']: {'id': row['id_employee'], 'departament': row['nm_departament'], 'gestor': row['nm_gestor']} for row in colaboradores}
+
+
 # Função para calcular a nota final
 def calcular_nota_final(selecoes_comportamental, selecao_tecnico):
     nota_comportamental = sum(pontuacoes_comportamental[nota] for nota in selecoes_comportamental if nota)
@@ -127,13 +147,13 @@ def determinar_nota_final(soma_final):
         return "A"
 
 # Função para atualizar o banco de dados
-def atualizar_banco_dados(nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final):
+def atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final):
     try:
         connection = conectar_banco()
         cursor = connection.cursor()
         cursor.execute(f"""
-            INSERT INTO datalake.avaliacao_abcd.avaliacao_abcd (nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota)
-            VALUES ('{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}')
+            INSERT INTO datalake.avaliacao_abcd.avaliacao_abcd (id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota)
+            VALUES ('{id_emp}', '{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}')
         """)
         connection.commit()
         cursor.close()
@@ -142,19 +162,43 @@ def atualizar_banco_dados(nome_colaborador, nome_gestor, setor, diretoria, data_
     except Exception as e:
         st.error(f"Erro ao salvar no banco de dados: {str(e)}")
 
+def limpar_campos():
+    st.session_state['nome_colaborador'] = ""
+    st.session_state['nome_gestor'] = ""
+    st.session_state['setor'] = ""
+    st.session_state['diretoria'] = ""
+    st.session_state['data_resposta'] = datetime.today()
+
 # Interface em Streamlit
 st.title("Avaliação ABCD")
 st.header("Preencha as informações abaixo:")
+
+# Buscar colaboradores, departamentos e gestores
+colaboradores_data = buscar_colaboradores_departamentos_gestores()
 
 # Inputs de informações do colaborador em grid de 2 colunas
 cols_inputs = st.columns(2)
 
 with cols_inputs[0]:
-    nome_colaborador = st.text_input("Nome do Colaborador")
-    setor = st.text_input("Setor")
+    # Campo "Nome do Colaborador" inicializa vazio
+    nome_colaborador = st.selectbox("Nome do Colaborador", options=[""] + list(colaboradores_data.keys()), help="Digite o nome do colaborador")
+    
+    if nome_colaborador:
+        id_emp = colaboradores_data[nome_colaborador]['id']  # ID correspondente ao colaborador selecionado
+    else:
+        id_emp = None
 
 with cols_inputs[1]:
-    nome_gestor = st.text_input("Nome do Gestor")
+    # Preenche automaticamente o nome do gestor, se um colaborador for selecionado
+    nome_gestor = st.text_input("Nome do Gestor", value=colaboradores_data[nome_colaborador]['gestor'] if nome_colaborador else "", disabled=True)
+
+cols_inputs2 = st.columns(2)
+
+with cols_inputs2[0]:
+    # Preenche automaticamente o setor do colaborador, se um colaborador for selecionado
+    setor = st.selectbox("Setor", options=[colaboradores_data[nome_colaborador]['departament']] if nome_colaborador else [""], help="Setor do colaborador")
+
+with cols_inputs2[1]:
     diretoria = st.text_input("Diretoria")
 
 # Data de resposta com formato dd-mm-yyyy
@@ -168,31 +212,30 @@ for categoria in categorias_comportamental:
     st.subheader(categoria)
     cols = st.columns([5, 5, 5, 5, 5])  # Ajuste para deixar as caixas mais largas
     
-    selected_nota = st.session_state.get(categoria)  # Recupera a seleção atual para essa categoria
+    selected_nota = st.session_state.get(categoria)
 
     for i, (nota, desc) in enumerate(descricoes_comportamental[categoria].items()):
         with cols[i]:
             if st.button(f"{nota}\n\n{desc}", key=f"{categoria}_{nota}"):
-                st.session_state[categoria] = nota  # Armazena a seleção da nota para a categoria
-                st.success(f"Selecionado: {nota} para {categoria}")  # Mensagem de confirmação da seleção
+                st.session_state[categoria] = nota
+                st.success(f"Selecionado: {nota} para {categoria}")
 
-    # Botão para cancelar a seleção de uma categoria
     if selected_nota:
         if st.button(f"Cancelar seleção de {categoria}"):
             del st.session_state[categoria]
-            st.warning(f"Seleção de {categoria} foi cancelada.")  # Mensagem de cancelamento
+            st.warning(f"Seleção de {categoria} foi cancelada.")
 
 # Avaliação Técnica
 st.subheader("Conhecimento Técnico")
-cols = st.columns([5, 5, 5, 5, 5])  # Ajuste para deixar as caixas mais largas
+cols = st.columns([5, 5, 5, 5, 5])
 
-selecao_tecnico = st.session_state.get(categoria_tecnica)  # Recupera a seleção atual para a categoria técnica
+selecao_tecnico = st.session_state.get(categoria_tecnica)
 
 for i, (nota, desc) in enumerate(descricoes_tecnico.items()):
     with cols[i]:
         if st.button(f"{nota}\n\n{desc}", key=f"{categoria_tecnica}_{nota}"):
-            st.session_state[categoria_tecnica] = nota  # Armazena a seleção da nota para a categoria técnica
-            st.success(f"Selecionado: {nota} para {categoria_tecnica}")  # Mensagem de confirmação da seleção
+            st.session_state[categoria_tecnica] = nota
+            st.success(f"Selecionado: {nota} para {categoria_tecnica}")
 
 # Botão para calcular a nota e salvar no banco de dados
 if st.button("Calcular Nota e Salvar"):
@@ -210,4 +253,5 @@ if st.button("Calcular Nota e Salvar"):
         st.write(f"Soma Final: {soma_final}")
         st.write(f"Nota Final: {nota_final}")
         
-        atualizar_banco_dados(nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final)
+        atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final)
+        limpar_campos()
