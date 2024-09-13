@@ -120,6 +120,7 @@ def buscar_colaboradores_departamentos_gestores():
         FROM
           datalake.silver_pny.dim_employee AS t1
         LEFT JOIN datalake.silver_pny.dim_employee AS t2 ON t1.id_employee_supervisor = t2.id_employee
+        WHERE t1.is_employee_inactive = 'F'
     """)
     colaboradores = cursor.fetchall()
     cursor.close()
