@@ -31,6 +31,7 @@ def buscar_colaboradores_departamentos_gestores():
           datalake.silver_pny.dim_employee AS t1
         LEFT JOIN datalake.silver_pny.dim_employee AS t2 ON t1.id_employee_supervisor = t2.id_employee
         WHERE t1.is_employee_inactive = 'F'
+        AND t1.has_given_access = 'T'
     """)
     colaboradores = cursor.fetchall()
     cursor.close()
@@ -61,7 +62,7 @@ def buscar_funcionarios_por_gestor(id_gestor):
           nm_employee
         FROM
           datalake.silver_pny.dim_employee
-        WHERE id_employee_supervisor = '{id_gestor}' AND is_employee_inactive = 'F'
+        WHERE id_employee_supervisor = '{id_gestor}' AND is_employee_inactive = 'F' AND has_given_access = 'T'
     """)
     funcionarios = cursor.fetchall()
     cursor.close()
@@ -73,14 +74,16 @@ def verificar_se_foi_avaliado(id_emp):
     connection = conectar_banco()
     cursor = connection.cursor()
     cursor.execute(f"""
-        SELECT 1
+        SELECT soma_final, nota
         FROM datalake.avaliacao_abcd.avaliacao_abcd
         WHERE id_emp = '{id_emp}'
     """)
     resultado = cursor.fetchone()
     cursor.close()
     connection.close()
-    return resultado is not None
+    if resultado:
+        return True, resultado['soma_final'], resultado['nota']
+    return False, None, None
 
 
 def abcd_page():
@@ -202,13 +205,13 @@ def abcd_page():
             return "A"
 
     # Função para atualizar o banco de dados
-    def atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final):
+    def atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final,soma_final):
         try:
             connection = conectar_banco()
             cursor = connection.cursor()
             cursor.execute(f"""
-                INSERT INTO datalake.avaliacao_abcd.avaliacao_abcd (id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota)
-                VALUES ('{id_emp}', '{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}')
+                INSERT INTO datalake.avaliacao_abcd.avaliacao_abcd (id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota, soma_final)
+                VALUES ('{id_emp}', '{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}','{soma_final}')
             """)
             connection.commit()
             cursor.close()
@@ -296,7 +299,7 @@ def abcd_page():
             st.write(f"Soma Final: {soma_final}")
             st.write(f"Nota Final: {nota_final}")
             
-            atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final)
+            atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final, soma_final)
             limpar_campos()
 
     # Lista de IDs de supervisores permitidos
@@ -304,8 +307,6 @@ def abcd_page():
 
     # Exibir a tabela com os funcionários e checkbox indicando se foram avaliados, em um grid de 3 colunas
     if nome_gestor:
-        st.subheader("Funcionários do Gestor")
-        
         # Buscar o ID do gestor com base no nome do gestor selecionado
         id_gestor = buscar_id_gestor(nome_gestor)
 
@@ -315,17 +316,42 @@ def abcd_page():
             funcionarios = buscar_funcionarios_por_gestor(id_gestor)
 
             if funcionarios:
-                # Dividindo os funcionários em colunas de 3 para criar um layout em grid
-                colunas = st.columns(4)  # Define 4 colunas para o grid
+                funcionarios_avaliados = []
+                funcionarios_nao_avaliados = []
+
+                for id_emp, nome_funcionario in funcionarios.items():
+                    foi_avaliado, soma_final, nota_final = verificar_se_foi_avaliado(id_emp)
+                    if foi_avaliado:
+                        funcionarios_avaliados.append((nome_funcionario, soma_final, nota_final))
+                    else:
+                        funcionarios_nao_avaliados.append((nome_funcionario, None, None))
+
+                # Ordenar os avaliados por nota final na ordem A, B+, B, C, D
+                ordem_notas = {'A': 5, 'B+': 4, 'B': 3, 'C': 2, 'D': 1}
+                funcionarios_avaliados.sort(key=lambda x: ordem_notas.get(x[2], 0), reverse=True)
+
+                # Exibir os funcionários avaliados
+                st.write("### Funcionários Avaliados")
+                if funcionarios_avaliados:
+                    colunas_avaliados = st.columns(4)
+                    for i, (nome_funcionario, soma_final, nota_final) in enumerate(funcionarios_avaliados):
+                        with colunas_avaliados[i % 4]:
+                            st.write(f"✅ {nome_funcionario}: (NF {soma_final}) (Cto {nota_final})")
+                            #st.write(f"Nota Soma Final: {soma_final}")
+                            #st.write(f"Nota Final: {nota_final}")
+                else:
+                    st.write("Nenhum funcionário avaliado encontrado.")
                 
-                for i, (id_emp, nome_funcionario) in enumerate(funcionarios.items()):
-                    foi_avaliado = verificar_se_foi_avaliado(id_emp)
-                    checkbox_label = f"{nome_funcionario} - {'Avaliado' if foi_avaliado else 'Não Avaliado'}"
-                    
-                    # Definindo a coluna em que o funcionário será inserido
-                    with colunas[i % 4]:
-                        st.checkbox(checkbox_label, value=foi_avaliado, disabled=True)
+                # Exibir os funcionários não avaliados
+                st.write("### Funcionários Não Avaliados")
+                if funcionarios_nao_avaliados:
+                    colunas_nao_avaliados = st.columns(4)
+                    for i, (nome_funcionario, _, _) in enumerate(funcionarios_nao_avaliados):
+                        with colunas_nao_avaliados[i % 4]:
+                            st.write(f"❌ {nome_funcionario}")
+                else:
+                    st.write("Todos os funcionários já foram avaliados.")
             else:
                 st.write("Nenhum funcionário encontrado para este gestor.")
-        else:
-            st.write("Gestor não permitido ou não válido para exibir funcionários.")
+    else:
+        st.write("Gestor não permitido ou não válido para exibir funcionários.")
