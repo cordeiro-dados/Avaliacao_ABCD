@@ -26,14 +26,15 @@ def buscar_colaboradores():
           id AS id_employee,
           Nome AS nm_employee,
           Setor AS nm_departament,
-          Gestor_Direto AS nm_gestor
+          Gestor_Direto AS nm_gestor,
+          Diretoria AS nm_diretoria
         FROM
           datalake.silver_pny.func_zoom
     """)
     colaboradores = cursor.fetchall()
     cursor.close()
     connection.close()
-    return {row['nm_employee']: {'id': row['id_employee'], 'departament': row['nm_departament'], 'gestor': row['nm_gestor']} for row in colaboradores}
+    return {row['nm_employee']: {'id': row['id_employee'], 'departament': row['nm_departament'], 'gestor': row['nm_gestor'], 'diretoria': row['nm_diretoria']} for row in colaboradores}
 
 
 # Função para buscar o id do gestor selecionado
@@ -252,7 +253,7 @@ def abcd_page():
         setor = st.selectbox("Setor", options=[colaboradores_data[nome_colaborador]['departament']] if nome_colaborador else [""])
 
     with cols_inputs2[1]:
-        diretoria = st.text_input("Diretoria")
+        diretoria = st.text_input("Diretoria", value=colaboradores_data[nome_colaborador]['diretoria'] if nome_colaborador else "", disabled=True)
 
     cols_date = st.columns([1, 3])
 
