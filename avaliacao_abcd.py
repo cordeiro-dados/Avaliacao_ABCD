@@ -18,25 +18,23 @@ def conectar_banco():
     )
 
 # Função para buscar colaboradores da tabela dim_employee
-def buscar_colaboradores_departamentos_gestores():
+def buscar_colaboradores():
     connection = conectar_banco()
     cursor = connection.cursor()
     cursor.execute("""
         SELECT
-          t1.id_employee,
-          t1.nm_employee,
-          t1.nm_departament,
-          t2.nm_employee AS nm_gestor
+          id AS id_employee,
+          Nome AS nm_employee,
+          Setor AS nm_departament,
+          Gestor_Direto AS nm_gestor
         FROM
-          datalake.silver_pny.dim_employee AS t1
-        LEFT JOIN datalake.silver_pny.dim_employee AS t2 ON t1.id_employee_supervisor = t2.id_employee
-        WHERE t1.is_employee_inactive = 'F'
-        AND t1.has_given_access = 'T'
+          datalake.silver_pny.func_zoom
     """)
     colaboradores = cursor.fetchall()
     cursor.close()
     connection.close()
     return {row['nm_employee']: {'id': row['id_employee'], 'departament': row['nm_departament'], 'gestor': row['nm_gestor']} for row in colaboradores}
+
 
 # Função para buscar o id do gestor selecionado
 def buscar_id_gestor(nome_gestor):
@@ -53,16 +51,16 @@ def buscar_id_gestor(nome_gestor):
     return resultado['id_employee'] if resultado else None
 
 # Função para buscar os funcionários do gestor selecionado
-def buscar_funcionarios_por_gestor(id_gestor):
+def buscar_funcionarios_por_gestor(nome_gestor):
     connection = conectar_banco()
     cursor = connection.cursor()
     cursor.execute(f"""
         SELECT
-          id_employee,
-          nm_employee
+          id AS id_employee,
+          Nome AS nm_employee
         FROM
-          datalake.silver_pny.dim_employee
-        WHERE id_employee_supervisor = '{id_gestor}' AND is_employee_inactive = 'F' AND has_given_access = 'T'
+          datalake.silver_pny.func_zoom
+        WHERE Gestor_Direto = '{nome_gestor}'
     """)
     funcionarios = cursor.fetchall()
     cursor.close()
@@ -233,7 +231,7 @@ def abcd_page():
     st.header("Preencha as informações abaixo:")
 
     # Buscar colaboradores, departamentos e gestores
-    colaboradores_data = buscar_colaboradores_departamentos_gestores()
+    colaboradores_data = buscar_colaboradores()
 
     # Inputs de informações do colaborador
     cols_inputs = st.columns(2)
@@ -303,55 +301,34 @@ def abcd_page():
             limpar_campos()
 
     # Lista de IDs de supervisores permitidos
-    ids_supervisores_permitidos = [739310, 435158, -5, 54, 441579, 1007190, 584, 755801, 742617]
-
-    # Exibir a tabela com os funcionários e checkbox indicando se foram avaliados, em um grid de 3 colunas
     if nome_gestor:
-        # Buscar o ID do gestor com base no nome do gestor selecionado
-        id_gestor = buscar_id_gestor(nome_gestor)
-
-        # Verifica se o ID do gestor está entre os permitidos
-        if id_gestor and id_gestor in ids_supervisores_permitidos:
-            # Buscar os funcionários sob o supervisor (gestor) selecionado
-            funcionarios = buscar_funcionarios_por_gestor(id_gestor)
-
-            if funcionarios:
-                funcionarios_avaliados = []
-                funcionarios_nao_avaliados = []
-
-                for id_emp, nome_funcionario in funcionarios.items():
-                    foi_avaliado, soma_final, nota_final = verificar_se_foi_avaliado(id_emp)
-                    if foi_avaliado:
-                        funcionarios_avaliados.append((nome_funcionario, soma_final, nota_final))
-                    else:
-                        funcionarios_nao_avaliados.append((nome_funcionario, None, None))
-
-                # Ordenar os avaliados por nota final na ordem A, B+, B, C, D
-                ordem_notas = {'A': 5, 'B+': 4, 'B': 3, 'C': 2, 'D': 1}
-                funcionarios_avaliados.sort(key=lambda x: ordem_notas.get(x[2], 0), reverse=True)
-
-                # Exibir os funcionários avaliados
-                st.write("### Funcionários Avaliados")
-                if funcionarios_avaliados:
-                    colunas_avaliados = st.columns(4)
-                    for i, (nome_funcionario, soma_final, nota_final) in enumerate(funcionarios_avaliados):
-                        with colunas_avaliados[i % 4]:
-                            st.write(f"✅ {nome_funcionario}: (NF {soma_final}) (Cto {nota_final})")
-                            #st.write(f"Nota Soma Final: {soma_final}")
-                            #st.write(f"Nota Final: {nota_final}")
+        funcionarios = buscar_funcionarios_por_gestor(nome_gestor)
+        if funcionarios:
+            st.write("### Funcionários Avaliados e Não Avaliados")
+            avaliados, nao_avaliados = [], []
+            for id_emp, nome_funcionario in funcionarios.items():
+                foi_avaliado, soma_final, nota_final = verificar_se_foi_avaliado(id_emp)
+                if foi_avaliado:
+                    avaliados.append((nome_funcionario, soma_final, nota_final))
                 else:
-                    st.write("Nenhum funcionário avaliado encontrado.")
-                
-                # Exibir os funcionários não avaliados
-                st.write("### Funcionários Não Avaliados")
-                if funcionarios_nao_avaliados:
-                    colunas_nao_avaliados = st.columns(4)
-                    for i, (nome_funcionario, _, _) in enumerate(funcionarios_nao_avaliados):
-                        with colunas_nao_avaliados[i % 4]:
-                            st.write(f"❌ {nome_funcionario}")
-                else:
-                    st.write("Todos os funcionários já foram avaliados.")
+                    nao_avaliados.append(nome_funcionario)
+
+            st.write("#### Funcionários Avaliados")
+            if avaliados:
+                colunas_avaliados = st.columns(3)  # Grid de 3 colunas
+                for i, (nome_funcionario, soma_final, nota_final) in enumerate(avaliados):
+                    with colunas_avaliados[i % 3]:
+                        st.write(f"✅ {nome_funcionario}: (Soma {soma_final}) (Nota {nota_final})")
             else:
-                st.write("Nenhum funcionário encontrado para este gestor.")
-    else:
-        st.write("Gestor não permitido ou não válido para exibir funcionários.")
+                st.write("Nenhum funcionário avaliado encontrado.")
+
+            st.write("#### Funcionários Não Avaliados")
+            if nao_avaliados:
+                colunas_nao_avaliados = st.columns(3)  # Grid de 3 colunas
+                for i, nome_funcionario in enumerate(nao_avaliados):
+                    with colunas_nao_avaliados[i % 3]:
+                        st.write(f"❌ {nome_funcionario}")
+            else:
+                st.write("Todos os funcionários já foram avaliados.")
+        else:
+            st.write("Nenhum funcionário encontrado.")
