@@ -10,7 +10,7 @@ pagina_selecionada = st.sidebar.selectbox("Escolha a página", ["Login", "Aplica
 # Carrega a página selecionada
 if pagina_selecionada == "Login":
     login_page()
-elif pagina_selecionada == "Aplicação ABCD":
+elif pagina_selecionada == "Avaliação ABCD":
     abcd_page()
 elif pagina_selecionada == "Funcionários Data":  # Nova página
     func_data_page()  # Chama a função da nova página

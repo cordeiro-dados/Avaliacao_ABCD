@@ -91,7 +91,7 @@ def abcd_page():
         st.error("Você precisa fazer login para acessar essa página.")
         return
 
-    st.title("Aplicação ABCD")
+    st.title("Avaliação ABCD")
     # Aplicando CSS para aumentar a largura da página e expandir elementos
     st.markdown(
         """
