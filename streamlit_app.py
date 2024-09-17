@@ -5,7 +5,7 @@ from func_data import func_data_page  # Importar a nova página
 
 # Cria um seletor de páginas na barra lateral
 st.sidebar.title("Navegação")
-pagina_selecionada = st.sidebar.selectbox("Escolha a página", ["Login", "Aplicação ABCD", "Funcionários Data"])  # Adicionar nova opção
+pagina_selecionada = st.sidebar.selectbox("Escolha a página", ["Login", "Avaliação ABCD", "Funcionários Data"])  # Adicionar nova opção
 
 # Carrega a página selecionada
 if pagina_selecionada == "Login":
