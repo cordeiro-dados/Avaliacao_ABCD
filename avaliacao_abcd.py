@@ -305,7 +305,6 @@ def abcd_page():
     if nome_gestor:
         funcionarios = buscar_funcionarios_por_gestor(nome_gestor)
         if funcionarios:
-            st.write("### Funcionários Avaliados e Não Avaliados")
             avaliados, nao_avaliados = [], []
             for id_emp, nome_funcionario in funcionarios.items():
                 foi_avaliado, soma_final, nota_final = verificar_se_foi_avaliado(id_emp)
@@ -319,7 +318,7 @@ def abcd_page():
                 colunas_avaliados = st.columns(3)  # Grid de 3 colunas
                 for i, (nome_funcionario, soma_final, nota_final) in enumerate(avaliados):
                     with colunas_avaliados[i % 3]:
-                        st.write(f"✅ {nome_funcionario}: (Soma {soma_final}) (Nota {nota_final})")
+                        st.write(f"✅ {nome_funcionario}: (NF {soma_final}) (CTO {nota_final})")
             else:
                 st.write("Nenhum funcionário avaliado encontrado.")
 
