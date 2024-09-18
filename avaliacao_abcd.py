@@ -215,8 +215,8 @@ def abcd_page():
                 )
                 VALUES (
                     '{id_emp}', '{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}', '{soma_final}',
-                    '{notas_categorias["Colaboração"]}', '{notas_categorias["Inteligência Emocional"]}', '{notas_categorias["Responsabilidade"]}',
-                    '{notas_categorias["Iniciativa / Pró atividade"]}', '{notas_categorias["Flexibilidade"]}', '{notas_categorias["Conhecimento Técnico"]}'
+                    '{notas_categorias["colaboracao"]}', '{notas_categorias["inteligencia_emocional"]}', '{notas_categorias["responsabilidade"]}',
+                    '{notas_categorias["iniciativa_proatividade"]}', '{notas_categorias["flexibilidade"]}', '{notas_categorias["conhecimento_tecnico"]}'
                 )
             """)
             connection.commit()
