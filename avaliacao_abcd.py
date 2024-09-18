@@ -204,13 +204,20 @@ def abcd_page():
             return "A"
 
     # Função para atualizar o banco de dados
-    def atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final,soma_final):
+    def atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final, soma_final, notas_categorias):
         try:
             connection = conectar_banco()
             cursor = connection.cursor()
             cursor.execute(f"""
-                INSERT INTO datalake.avaliacao_abcd.avaliacao_abcd (id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota, soma_final)
-                VALUES ('{id_emp}', '{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}','{soma_final}')
+                INSERT INTO datalake.avaliacao_abcd.avaliacao_abcd (
+                    id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota, soma_final,
+                    colaboracao, inteligencia_emocional, responsabilidade, iniciativa_proatividade, flexibilidade, conhecimento_tecnico
+                )
+                VALUES (
+                    '{id_emp}', '{nome_colaborador}', '{nome_gestor}', '{setor}', '{diretoria}', '{data_resposta}', '{nota_final}', '{soma_final}',
+                    '{notas_categorias["Colaboração"]}', '{notas_categorias["Inteligência Emocional"]}', '{notas_categorias["Responsabilidade"]}',
+                    '{notas_categorias["Iniciativa / Pró atividade"]}', '{notas_categorias["Flexibilidade"]}', '{notas_categorias["Conhecimento Técnico"]}'
+                )
             """)
             connection.commit()
             cursor.close()
@@ -259,6 +266,7 @@ def abcd_page():
     with cols_date[0]:
         data_resposta = st.date_input("Data da Resposta", value=datetime.today(), format="DD-MM-YYYY")
 
+    notas_categorias = {}
     # Avaliação Comportamental
     st.subheader("Comportamental")
     for categoria in categorias_comportamental:
@@ -271,9 +279,21 @@ def abcd_page():
                 if st.button(f"{nota}\n\n{desc}", key=f"{categoria}_{nota}"):
                     st.session_state[categoria] = nota
                     st.success(f"Selecionado: {nota} para {categoria}")
+
         # Exibir o feedback de seleção
         if selected_nota:
             st.write(f"Selecionado para {categoria}: {selected_nota}")
+        
+        if categoria == "Colaboração":
+            notas_categorias["colaboracao"] = st.session_state.get(categoria)
+        elif categoria == "Inteligência Emocional":
+            notas_categorias["inteligencia_emocional"] = st.session_state.get(categoria)
+        elif categoria == "Responsabilidade":
+            notas_categorias["responsabilidade"] = st.session_state.get(categoria)
+        elif categoria == "Iniciativa / Pró atividade":
+            notas_categorias["iniciativa_proatividade"] = st.session_state.get(categoria)
+        elif categoria == "Flexibilidade":
+            notas_categorias["flexibilidade"] = st.session_state.get(categoria)
 
     # Avaliação Técnica
     st.subheader("Conhecimento Técnico")
@@ -287,6 +307,7 @@ def abcd_page():
                 st.success(f"Selecionado: {nota} para {categoria}")
     if selected_nota:
             st.write(f"Selecionado para {categoria}: {selected_nota}")
+    notas_categorias["conhecimento_tecnico"] = st.session_state.get(categoria_tecnica)
 
     # Botão para calcular a nota e salvar no banco de dados
     if st.button("Calcular Nota e Salvar"):
@@ -304,7 +325,7 @@ def abcd_page():
             st.write(f"Soma Final: {soma_final}")
             st.write(f"Nota Final: {nota_final}")
             
-            atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final, soma_final)
+            atualizar_banco_dados(id_emp, nome_colaborador, nome_gestor, setor, diretoria, data_resposta, nota_final, soma_final, notas_categorias)
             limpar_campos()
 
     # Lista de IDs de supervisores permitidos

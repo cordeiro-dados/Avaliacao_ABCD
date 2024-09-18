@@ -55,15 +55,24 @@ def func_data_nota():
                     funcionarios_opcoes = df_busca.apply(lambda row: f"ID {row['id_emp']}: {row['nome_colaborador']}", axis=1).tolist()
                     id_selecionado = st.selectbox("Selecione o Avaliado para Atualizar", options=df_busca['id_emp'], format_func=lambda x: f"ID {x}: {df_busca[df_busca['id_emp'] == x]['nome_colaborador'].values[0]}")
                     
+                    # Exibir as colunas para atualização
                     nome_colaborador = st.text_input("Novo Nome do Colaborador", value=df_busca[df_busca['id_emp'] == id_selecionado]['nome_colaborador'].values[0])
                     nome_gestor = st.text_input("Novo Nome do Gestor", value=df_busca[df_busca['id_emp'] == id_selecionado]['nome_gestor'].values[0])
                     setor = st.text_input("Novo Setor", value=df_busca[df_busca['id_emp'] == id_selecionado]['setor'].values[0])
                     diretoria = st.text_input("Nova Diretoria", value=df_busca[df_busca['id_emp'] == id_selecionado]['diretoria'].values[0])
                     nota = st.text_input("Nova Nota", value=df_busca[df_busca['id_emp'] == id_selecionado]['nota'].values[0])
                     soma_final = st.text_input("Nova Soma Final", value=df_busca[df_busca['id_emp'] == id_selecionado]['soma_final'].values[0])
+                    
+                    # Adicionar as colunas novas
+                    colaboracao = st.text_input("Colaboração", value=df_busca[df_busca['id_emp'] == id_selecionado]['colaboracao'].values[0])
+                    inteligencia_emocional = st.text_input("Inteligência Emocional", value=df_busca[df_busca['id_emp'] == id_selecionado]['inteligencia_emocional'].values[0])
+                    responsabilidade = st.text_input("Responsabilidade", value=df_busca[df_busca['id_emp'] == id_selecionado]['responsabilidade'].values[0])
+                    iniciativa_proatividade = st.text_input("Iniciativa / Pró Atividade", value=df_busca[df_busca['id_emp'] == id_selecionado]['iniciativa_proatividade'].values[0])
+                    flexibilidade = st.text_input("Flexibilidade", value=df_busca[df_busca['id_emp'] == id_selecionado]['flexibilidade'].values[0])
+                    conhecimento_tecnico = st.text_input("Conhecimento Técnico", value=df_busca[df_busca['id_emp'] == id_selecionado]['conhecimento_tecnico'].values[0])
 
                     if st.button("Atualizar"):
-                        atualizar_avaliado(conn, id_selecionado, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final)
+                        atualizar_avaliado(conn, id_selecionado, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final, colaboracao, inteligencia_emocional, responsabilidade, iniciativa_proatividade, flexibilidade, conhecimento_tecnico)
 
         elif opcao == "Deletar":
             st.subheader("Deletar Avaliado")
@@ -89,7 +98,11 @@ def func_data_nota():
 # Funções CRUD que serão usadas na página
 
 def listar_avaliados(conn):
-    query = "SELECT * FROM datalake.avaliacao_abcd.avaliacao_abcd"
+    query = """
+    SELECT id_emp, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final, 
+           colaboracao, inteligencia_emocional, responsabilidade, iniciativa_proatividade, flexibilidade, conhecimento_tecnico
+    FROM datalake.avaliacao_abcd.avaliacao_abcd
+    """
     cursor = conn.cursor()
     cursor.execute(query)
     resultados = cursor.fetchall()
@@ -100,7 +113,8 @@ def listar_avaliados(conn):
 
 def buscar_por_nome(conn, nome):
     query = f"""
-    SELECT id_emp, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final 
+    SELECT id_emp, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final, 
+           colaboracao, inteligencia_emocional, responsabilidade, iniciativa_proatividade, flexibilidade, conhecimento_tecnico
     FROM datalake.avaliacao_abcd.avaliacao_abcd 
     WHERE LOWER(nome_colaborador) LIKE LOWER('%{nome}%')
     """
@@ -112,10 +126,13 @@ def buscar_por_nome(conn, nome):
     cursor.close()
     return df
 
-def atualizar_avaliado(conn, id_emp, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final):
+def atualizar_avaliado(conn, id_emp, nome_colaborador, nome_gestor, setor, diretoria, nota, soma_final, colaboracao, inteligencia_emocional, responsabilidade, iniciativa_proatividade, flexibilidade, conhecimento_tecnico):
     query = f"""
     UPDATE datalake.avaliacao_abcd.avaliacao_abcd 
-    SET nome_colaborador = '{nome_colaborador}', nome_gestor = '{nome_gestor}', setor = '{setor}', diretoria = '{diretoria}', nota = '{nota}', soma_final = '{soma_final}'
+    SET nome_colaborador = '{nome_colaborador}', nome_gestor = '{nome_gestor}', setor = '{setor}', diretoria = '{diretoria}', 
+        nota = '{nota}', soma_final = '{soma_final}', colaboracao = '{colaboracao}', inteligencia_emocional = '{inteligencia_emocional}', 
+        responsabilidade = '{responsabilidade}', iniciativa_proatividade = '{iniciativa_proatividade}', flexibilidade = '{flexibilidade}', 
+        conhecimento_tecnico = '{conhecimento_tecnico}'
     WHERE id_emp = {id_emp};
     """
     try:
