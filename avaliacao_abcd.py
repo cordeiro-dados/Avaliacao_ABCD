@@ -120,10 +120,10 @@ def abcd_page():
     # Definindo as categorias, notas e suas pontuações com descrições para comportamental
     categorias_comportamental = ["Colaboração", "Inteligência Emocional", "Responsabilidade", "Iniciativa / Pró atividade", "Flexibilidade"]
     pontuacoes_comportamental = {
-        "A": 16,
-        "B+": 12,
-        "B": 8,
-        "C": 4,
+        "A": 10,
+        "B+": 7.5,
+        "B": 5,
+        "C": 2.5,
         "D": 0
     }
     descricoes_comportamental = {
@@ -167,10 +167,10 @@ def abcd_page():
     # Definindo a única categoria, notas e suas pontuações com descrições para técnico
     categoria_tecnica = "Conhecimento Técnico"
     pontuacoes_tecnico = {
-        "A": 20,
-        "B+": 15,
-        "B": 10,
-        "C": 5,
+        "A": 50,
+        "B+": 37.7,
+        "B": 25,
+        "C": 12.5,
         "D": 0
     }
 
@@ -196,9 +196,9 @@ def abcd_page():
             return "D"
         elif 25 <= soma_final <= 49:
             return "C"
-        elif 50 <= soma_final <= 74:
+        elif 50 <= soma_final <= 69:
             return "B"
-        elif 75 <= soma_final <= 89:
+        elif 70 <= soma_final <= 89:
             return "B+"
         else:
             return "A"
