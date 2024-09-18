@@ -192,11 +192,11 @@ def abcd_page():
 
     # Função para determinar a nota com base na soma final
     def determinar_nota_final(soma_final):
-        if soma_final <= 49:
+        if soma_final <= 29:
             return "D"
-        elif 50 <= soma_final <= 69:
+        elif 30 <= soma_final <= 59:
             return "C"
-        elif 70 <= soma_final <= 79:
+        elif 60 <= soma_final <= 79:
             return "B"
         elif 80 <= soma_final <= 89:
             return "B+"
