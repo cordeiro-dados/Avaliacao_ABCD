@@ -194,11 +194,11 @@ def abcd_page():
     def determinar_nota_final(soma_final):
         if soma_final <= 24:
             return "D"
-        elif 25 <= soma_final <= 49:
+        elif 25 <= soma_final <= 45:
             return "C"
-        elif 50 <= soma_final <= 69:
+        elif 46 <= soma_final <= 75:
             return "B"
-        elif 70 <= soma_final <= 89:
+        elif 76 <= soma_final <= 89:
             return "B+"
         else:
             return "A"
