@@ -228,7 +228,6 @@ def abcd_page():
 
     # Interface em Streamlit
     # Interface em Streamlit
-    st.title("Avaliação ABCD")
     st.header("Preencha as informações abaixo:")
 
     # Buscar colaboradores, departamentos e gestores
@@ -272,15 +271,22 @@ def abcd_page():
                 if st.button(f"{nota}\n\n{desc}", key=f"{categoria}_{nota}"):
                     st.session_state[categoria] = nota
                     st.success(f"Selecionado: {nota} para {categoria}")
+        # Exibir o feedback de seleção
+        if selected_nota:
+            st.write(f"Selecionado para {categoria}: {selected_nota}")
 
     # Avaliação Técnica
     st.subheader("Conhecimento Técnico")
     cols = st.columns([5, 5, 5, 5, 5])
 
+    selected_nota = st.session_state.get(categoria)
     for i, (nota, desc) in enumerate(descricoes_tecnico.items()):
         with cols[i]:
             if st.button(f"{nota}\n\n{desc}", key=f"{categoria_tecnica}_{nota}"):
                 st.session_state[categoria_tecnica] = nota
+                st.success(f"Selecionado: {nota} para {categoria}")
+    if selected_nota:
+            st.write(f"Selecionado para {categoria}: {selected_nota}")
 
     # Botão para calcular a nota e salvar no banco de dados
     if st.button("Calcular Nota e Salvar"):
