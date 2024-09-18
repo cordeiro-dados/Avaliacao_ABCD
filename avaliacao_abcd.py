@@ -121,9 +121,9 @@ def abcd_page():
     categorias_comportamental = ["Colaboração", "Inteligência Emocional", "Responsabilidade", "Iniciativa / Pró atividade", "Flexibilidade"]
     pontuacoes_comportamental = {
         "A": 10,
-        "B+": 7.5,
-        "B": 5,
-        "C": 2.5,
+        "B+": 8,
+        "B": 6,
+        "C": 4,
         "D": 0
     }
     descricoes_comportamental = {
@@ -168,9 +168,9 @@ def abcd_page():
     categoria_tecnica = "Conhecimento Técnico"
     pontuacoes_tecnico = {
         "A": 50,
-        "B+": 37.7,
-        "B": 25,
-        "C": 12.5,
+        "B+": 40,
+        "B": 30,
+        "C": 20,
         "D": 0
     }
 
@@ -192,13 +192,13 @@ def abcd_page():
 
     # Função para determinar a nota com base na soma final
     def determinar_nota_final(soma_final):
-        if soma_final <= 24:
+        if soma_final <= 49:
             return "D"
-        elif 25 <= soma_final <= 45:
+        elif 50 <= soma_final <= 69:
             return "C"
-        elif 46 <= soma_final <= 75:
+        elif 70 <= soma_final <= 79:
             return "B"
-        elif 76 <= soma_final <= 89:
+        elif 80 <= soma_final <= 89:
             return "B+"
         else:
             return "A"
