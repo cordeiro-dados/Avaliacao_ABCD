@@ -2,6 +2,8 @@ import streamlit as st
 from databricks import sql
 from dotenv import load_dotenv
 import os
+from time import sleep
+from st_pages import hide_pages
 
 load_dotenv()
 DB_SERVER_HOSTNAME = os.getenv("DB_SERVER_HOSTNAME")
@@ -32,14 +34,23 @@ def verificar_login(username, password):
 
 # Função para a página de login
 def login_page():
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    login_button = st.button("Login")
+    if not st.session_state.get("logged_in", False):
+        hide_pages(["Avaliação ABCD", "Funcionários Data", "Lista de Avaliados"])  # Oculta as páginas enquanto não logado
+        
+        st.title("Login")
+        username = st.text_input("Username", key="username")
+        password = st.text_input("Password", key="password", type="password")
+        
+        login_button = st.button("Login")
 
-    if login_button:
-        if verificar_login(username, password):
-            st.session_state['logged_in'] = True
-            st.success("Login bem-sucedido! Vá para a aplicação principal.")
-        else:
-            st.error("Usuário ou senha incorretos.")
+        if login_button:
+            if verificar_login(username, password):
+                st.session_state["logged_in"] = True  # Marca como logado
+                hide_pages([])  # Mostra todas as páginas após login
+                st.success("Login bem-sucedido! Você será redirecionado.")
+                sleep(0.5)
+                st.experimental_rerun()  # Redireciona para a página principal
+            else:
+                st.error("Usuário ou senha incorretos.")
+    else:
+        st.success("Você já está logado!")
