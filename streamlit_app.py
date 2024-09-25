@@ -1,6 +1,6 @@
 import streamlit as st
 from login import login_page
-from abcd import abcd_page
+from avaliacao_abcd import abcd_page
 from func_data import func_data_page
 from alter_nota import func_data_nota
 
