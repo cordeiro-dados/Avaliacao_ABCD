@@ -28,7 +28,7 @@ def func_data_nota():
     if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
         st.error("Você precisa fazer login para acessar essa página.")
         return
-    st.title("Avaliados")
+    st.title("dim_customer")
 
     # Opções de CRUD
     opcao = st.selectbox("Escolha a operação", ["Listar", "Atualizar", "Deletar"])
